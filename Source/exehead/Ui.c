@@ -36,6 +36,9 @@
 
 #ifdef NSIS_CONFIG_VISIBLE_SUPPORT
 HICON g_hIcon;
+#ifdef NSIS_CONFIG_LICENSEPAGE
+static int g_richedit_v1;
+#endif
 #endif
 
 int dlg_offset;
@@ -419,6 +422,7 @@ FORCE_INLINE int NSISCALL ui_doinstall(void)
       static const TCHAR richedit[]=_T("RichEdit"); // v1 class
       if (!LoadSystemLibrary(riched20))
       {
+        g_richedit_v1 = 1;
         LoadSystemLibrary(riched32); // Win95 only ships with v1.0, NT4 has v2.0: web.archive.org/web/20030607222419/http://msdn.microsoft.com/library/en-us/shellcc/platform/commctls/richedit/richeditcontrols/aboutricheditcontrols.asp
       }
 
@@ -748,6 +752,18 @@ skipPage:
 #include <richedit.h>
 #undef _RICHEDIT_VER
 static DWORD g_cbLicRead;
+#ifdef _UNICODE
+// RichEdit 1.0 takes plain text in the ANSI code page only (no SF_UNICODE)
+DWORD CALLBACK StreamLicenseAnsi(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+{
+  LPCWSTR src = ((LPCWSTR) dwCookie)+g_cbLicRead;
+  size_t len = lstrlen(src);
+  len = min(len, cb/sizeof(WCHAR));
+  *pcb=WideCharToMultiByte(CP_ACP,0,src,(int)len,(char*)pbBuff,cb,NULL,NULL);
+  g_cbLicRead+=(DWORD)len;
+  return 0;
+}
+#endif
 DWORD CALLBACK StreamLicense(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
   lstrcpyn((LPTSTR)pbBuff,(LPTSTR)(dwCookie+g_cbLicRead),cb/sizeof(TCHAR));
@@ -804,6 +820,13 @@ static INT_PTR CALLBACK LicenseProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     SendMessage(hwLicense,EM_SETEVENTMASK,0,ENM_LINK|ENM_KEYEVENTS); //XGE 8th September 2002 Or'd in ENM_KEYEVENTS
     SendMessage(hwLicense,EM_EXLIMITTEXT,0,mystrlen(l));
     g_cbLicRead = 0;
+#ifdef _UNICODE
+    if (g_richedit_v1 && lt != SF_RTF)
+    {
+      es.pfnCallback = StreamLicenseAnsi;
+      lt = SF_TEXT;
+    }
+#endif
     SendMessage(hwLicense,EM_STREAMIN,lt,(LPARAM)&es);
     LicIgnoreWMCommand = 0;
     return FALSE;

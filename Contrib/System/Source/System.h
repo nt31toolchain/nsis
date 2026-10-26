@@ -9,6 +9,8 @@
 #  define SYSTEM_X86
 #elif defined(_M_ARM64)
 #  define SYSTEM_ARM64
+#elif defined(_M_MRX000) || defined(__mips__) || defined(_M_PPC)
+#  define SYSTEM_MIPS // Windows NT for MIPS R4000 or PowerPC, 32-bit: calls in C (System.c), no callbacks
 #else
 #  error "Unknown architecture!"
 #endif
@@ -151,6 +153,8 @@ struct tag_CallbackThunk
         char asm_code[10];
     #elif defined(SYSTEM_AMD64) || defined(SYSTEM_ARM64)
         char asm_code[BUGBUG64(1)]; // TODO: BUGBUG64
+    #elif defined(SYSTEM_MIPS)
+        char asm_code[1]; // no callbacks
     #else
         #error "Asm thunk not implemented for this architecture!"
     #endif
@@ -163,6 +167,8 @@ struct tag_CallbackThunk
 #   define GetAssociatedSysProcFromCallbackThunkPtr(pCbT) ( (SystemProc*)  *(unsigned int*) (((char*)(pCbT))+1) )
 #elif defined(SYSTEM_AMD64) || defined(SYSTEM_ARM64)
 #   define GetAssociatedSysProcFromCallbackThunkPtr(pCbT) BUGBUG64(NULL)
+#elif defined(SYSTEM_MIPS)
+#   define GetAssociatedSysProcFromCallbackThunkPtr(pCbT) ((SystemProc*) NULL)
 #else
 #   error "GetAssociatedSysProcFromCallbackThunkPtr not defined for the current architecture!"
 #endif

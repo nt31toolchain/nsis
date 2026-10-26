@@ -40,7 +40,12 @@ TCHAR g_log_file[1024];
 // and change the virtual size of this section
 // which results in extra memory for extra variables without code to do allocation :)
 // nsis then removes the "DISCARDABLE" style from section (for safe)
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(__clang__)
+// clang does not put a variable without an initial value into the section
+// of bss_seg: the section gets the variable by name.
+#  pragma section(NSIS_VARS_SECTION, read, write)
+__declspec(allocate(NSIS_VARS_SECTION)) NSIS_STRING g_usrvarssection[1] = {{0}};
+#elif defined(_MSC_VER)
 #  pragma bss_seg(NSIS_VARS_SECTION)
 NSIS_STRING g_usrvarssection[1];
 #  pragma bss_seg()

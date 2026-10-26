@@ -240,6 +240,8 @@ class CEXEBuild {
       TARGET_X86UNICODE,
       TARGET_AMD64, // Always Unicode
       TARGET_ARM64, // Always Unicode
+      TARGET_MIPS, // Windows NT for MIPS R4000 (little endian), always Unicode
+      TARGET_PPC, // Windows NT for PowerPC (little endian), always Unicode
       TARGET_UNKNOWN,
       TARGETCOUNT = (TARGET_UNKNOWN-TARGETFIRST)
     } TARGETTYPE;

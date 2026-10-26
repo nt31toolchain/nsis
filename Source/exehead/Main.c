@@ -97,7 +97,15 @@ EXTERN_C void NSISWinMainNOCRT()
   TCHAR *cmdline;
   OSVERSIONINFOEX ovi;
 
+#if defined(_M_MRX000) || defined(__mips__) || defined(_M_PPC)
+  // The installer data has values at addresses that are not aligned, and a
+  // MIPS or PowerPC processor gives a fault for them: the system then does
+  // the access.
+  // 0x0004 is SEM_NOALIGNMENTFAULTEXCEPT.
+  SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS | 0x0004);
+#else
   SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
+#endif
 
   // Get the version as reported by Windows
   if (sizeof(void*) < 8)

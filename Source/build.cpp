@@ -4043,7 +4043,9 @@ int CEXEBuild::set_target_architecture_data()
     { TARGET_X86ANSI,    _T("NSIS_IX86"),  _T("300") },
     { TARGET_X86UNICODE, _T("NSIS_IX86"),  _T("400") },
     { TARGET_AMD64,      _T("NSIS_AMD64"), _T("1")   },
-    { TARGET_ARM64,      _T("NSIS_ARM64"), _T("1")   }
+    { TARGET_ARM64,      _T("NSIS_ARM64"), _T("1")   },
+    { TARGET_MIPS,       _T("NSIS_MIPS"),  _T("1")   },
+    { TARGET_PPC,        _T("NSIS_PPC"),   _T("1")   }
   };
   for (i = 0; i < COUNTOF(tdef); ++i) definedlist.del(tdef[i].def);
   unsigned int success = false;
@@ -4060,6 +4062,8 @@ const TCHAR* CEXEBuild::get_target_suffix(CEXEBuild::TARGETTYPE tt, const TCHAR*
   case TARGET_X86UNICODE: return _T("x86-unicode");
   case TARGET_AMD64     : return _T("amd64-unicode");
   case TARGET_ARM64     : return _T("arm64-unicode");
+  case TARGET_MIPS      : return _T("mips-unicode");
+  case TARGET_PPC       : return _T("ppc-unicode");
   default: return defval;
   }
 }

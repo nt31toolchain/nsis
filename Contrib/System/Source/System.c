@@ -355,7 +355,55 @@ SystemProc* CallProc(SystemProc *proc)
     return proc;
 }
 #endif //~ SYSTEM_ARM64
-#ifdef _WIN64
+#ifdef SYSTEM_MIPS
+/*
+The calling convention of Windows NT for MIPS passes every integer and
+pointer argument as one word, the first four in registers and the others on
+the stack; a 64-bit value takes two words at an even position. That of
+PowerPC does the same with eight registers; a function pointer is the
+address of a function descriptor, as GetProcAddress gives it. The caller
+removes the arguments. A call with a fixed number of argument words is thus
+correct for every function with integer arguments: no assembly is necessary.
+Floating-point arguments are not possible (System has no type for them).
+*/
+#define SYSTEM_MIPS_MAXWORDS 32
+SystemProc* CALLBACK SetCallProcResultValues(SystemProc *proc, ULARGE_INTEGER retval);
+SystemProc* CallProc(SystemProc *proc)
+{
+    typedef ULONGLONG (*WORDPROC)(UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR,
+                                  UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR,
+                                  UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR,
+                                  UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR, UINT_PTR);
+    UINT_PTR w[SYSTEM_MIPS_MAXWORDS + 2];
+    ULARGE_INTEGER retval;
+    int i, count = 0;
+
+    for (i = 0; i < SYSTEM_MIPS_MAXWORDS + 2; i++) w[i] = 0;
+    for (i = 1; i <= proc->ParamCount; i++)
+    {
+        if (count + 2 > SYSTEM_MIPS_MAXWORDS)
+        {
+            proc->ProcResult = PR_ERROR;
+            return proc;
+        }
+        if (proc->Params[i].Size == 2)
+        {
+            count += count & 1;
+            w[count++] = (UINT_PTR) proc->Params[i].Value;
+            w[count++] = (UINT_PTR) proc->Params[i]._value;
+        }
+        else
+            w[count++] = (UINT_PTR) proc->Params[i].Value;
+    }
+    if ((proc->Options & POPT_ERROR) != 0) SetLastError(LastError);
+    retval.QuadPart = ((WORDPROC) proc->Proc)(w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7],
+                                              w[8], w[9], w[10], w[11], w[12], w[13], w[14], w[15],
+                                              w[16], w[17], w[18], w[19], w[20], w[21], w[22], w[23],
+                                              w[24], w[25], w[26], w[27], w[28], w[29], w[30], w[31]);
+    return SetCallProcResultValues(proc, retval);
+}
+#endif //~ SYSTEM_MIPS
+#if defined(_WIN64) || defined(SYSTEM_MIPS)
 /*
 BUGBUG: TODO: CallBack support not implemented!
 */
@@ -1258,6 +1306,8 @@ HANDLE CreateCallback(SystemProc *cbproc)
 {
 #if defined(SYSTEM_AMD64) || defined(SYSTEM_ARM64)
     return BUGBUG64(HANDLE) NULL;
+#elif defined(SYSTEM_MIPS)
+    return (HANDLE) NULL;
 #else
     char *mem;
 
@@ -1457,6 +1507,8 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved)
         retexpr[2] = 0x00;
 #elif defined(SYSTEM_AMD64) || defined(SYSTEM_ARM64)
         retexpr[0] = BUGBUG64(0);
+#elif defined(SYSTEM_MIPS)
+        retexpr[0] = 0;
 #else
 #error TODO
 #endif
