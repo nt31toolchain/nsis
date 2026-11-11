@@ -204,6 +204,9 @@ EXTERN_C void NSISWinMainNOCRT()
 #endif
 
   InitCommonControls();
+#ifdef __NT31_SDK__
+  RegisterNT31Controls();
+#endif
 
 #if defined(NSIS_SUPPORT_ACTIVEXREG) || defined(NSIS_SUPPORT_CREATESHORTCUT)
   {

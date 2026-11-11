@@ -38,6 +38,7 @@
 HICON g_hIcon;
 #ifdef NSIS_CONFIG_LICENSEPAGE
 static int g_richedit_v1;
+static int g_plain_license; // no rich edit control: an edit control shows the text
 #endif
 #endif
 
@@ -429,7 +430,9 @@ FORCE_INLINE int NSISCALL ui_doinstall(void)
       // Register RichEdit20A/W as a RICHEDIT clone (for Win95)
       if (!GetClassInfo(NULL,richedit20t,&wc))
       {
-        GetClassInfo(NULL,richedit,&wc);
+        // Windows NT 3.1 has no rich edit control
+        if (!GetClassInfo(NULL,richedit,&wc))
+          g_plain_license = GetClassInfo(NULL,_T("EDIT"),&wc);
         wc.lpszClassName = richedit20t;
         RegisterClass(&wc);
       }
@@ -784,6 +787,26 @@ DWORD CALLBACK StreamLicenseRTF(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG
 }
 #endif
 
+// The licence as plain text in an edit control, which needs CR LF line ends.
+static void NSISCALL SetPlainLicense(HWND hwLicense, LPCTSTR text)
+{
+  LPCTSTR from;
+  LPTSTR buffer, to;
+  int size = 1;
+
+  for (from = text; *from; from++)
+    size += (*from == _T('\n') && (from == text || from[-1] != _T('\r'))) ? 2 : 1;
+  buffer = (LPTSTR) GlobalAlloc(GPTR, size * sizeof(TCHAR));
+  if (!buffer)
+    return;
+  for (from = text, to = buffer; *from; *to++ = *from++)
+    if (*from == _T('\n') && (from == text || from[-1] != _T('\r')))
+      *to++ = _T('\r');
+  SendMessage(hwLicense, EM_LIMITTEXT, 0, 0);
+  SetWindowText(hwLicense, buffer);
+  GlobalFree(buffer);
+}
+
 static INT_PTR CALLBACK LicenseProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   page *m_this_page=g_this_page;
@@ -813,6 +836,12 @@ static INT_PTR CALLBACK LicenseProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
     hwLicense=GetUIItem(IDC_EDIT1);
     SetActiveCtl(hwLicense);
+    if (g_plain_license)
+    {
+      SetPlainLicense(hwLicense, l);
+      LicIgnoreWMCommand = 0;
+      return FALSE;
+    }
     SendMessage(hwLicense,EM_AUTOURLDETECT,TRUE,0);
 #define lbg g_header->license_bg
     SendMessage(hwLicense,EM_SETBKGNDCOLOR,0,lbg>=0?lbg:GetSysColor(-lbg));

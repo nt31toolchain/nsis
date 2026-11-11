@@ -451,10 +451,10 @@ Var MUI_TEMP2
   !ifdef MUI_${UNINSTALLER}WELCOMEPAGE | MUI_${UNINSTALLER}FINISHPAGE
 
     !insertmacro INSTALLOPTIONS_EXTRACT_AS "${MUI_${UNINSTALLER}WELCOMEFINISHPAGE_INI}" "ioSpecial.ini"
-    File "/oname=$PLUGINSDIR\modern-wizard.bmp" "${MUI_${UNINSTALLER}WELCOMEFINISHPAGE_BITMAP}"
+    File "/oname=$PLUGINSDIR\mwizard.bmp" "${MUI_${UNINSTALLER}WELCOMEFINISHPAGE_BITMAP}"
     !pragma verifyloadimage "${MUI_${UNINSTALLER}WELCOMEFINISHPAGE_BITMAP}"
 
-    !insertmacro INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 1" "Text" "$PLUGINSDIR\modern-wizard.bmp"
+    !insertmacro INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 1" "Text" "$PLUGINSDIR\mwizard.bmp"
 
     !ifdef MUI_${UNINSTALLER}WELCOMEFINISHPAGE_BITMAP_NOSTRETCH
       !insertmacro INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 1" "Flags" ""
@@ -474,13 +474,13 @@ Var MUI_TEMP2
 
     StrCmp $(^RTL) 0 mui.headerimageinit_nortl
 
-        File "/oname=$PLUGINSDIR\modern-header.bmp" "${MUI_HEADERIMAGE_${UNINSTALLER}BITMAP_RTL}"
+        File "/oname=$PLUGINSDIR\mheader.bmp" "${MUI_HEADERIMAGE_${UNINSTALLER}BITMAP_RTL}"
         !pragma verifyloadimage "${MUI_HEADERIMAGE_${UNINSTALLER}BITMAP_RTL}"
 
         !ifndef MUI_HEADERIMAGE_${UNINSTALLER}BITMAP_RTL_NOSTRETCH
-          SetBrandingImage /IMGID=1046 /RESIZETOFIT "$PLUGINSDIR\modern-header.bmp"
+          SetBrandingImage /IMGID=1046 /RESIZETOFIT "$PLUGINSDIR\mheader.bmp"
         !else
-          SetBrandingImage /IMGID=1046 "$PLUGINSDIR\modern-header.bmp"
+          SetBrandingImage /IMGID=1046 "$PLUGINSDIR\mheader.bmp"
         !endif
 
         Goto mui.headerimageinit_done
@@ -489,13 +489,13 @@ Var MUI_TEMP2
 
     !endif
 
-        File "/oname=$PLUGINSDIR\modern-header.bmp" "${MUI_HEADERIMAGE_${UNINSTALLER}BITMAP}"
+        File "/oname=$PLUGINSDIR\mheader.bmp" "${MUI_HEADERIMAGE_${UNINSTALLER}BITMAP}"
         !pragma verifyloadimage "${MUI_HEADERIMAGE_${UNINSTALLER}BITMAP}"
 
         !ifndef MUI_HEADERIMAGE_${UNINSTALLER}BITMAP_NOSTRETCH
-          SetBrandingImage /IMGID=1046 /RESIZETOFIT "$PLUGINSDIR\modern-header.bmp"
+          SetBrandingImage /IMGID=1046 /RESIZETOFIT "$PLUGINSDIR\mheader.bmp"
         !else
-          SetBrandingImage /IMGID=1046 "$PLUGINSDIR\modern-header.bmp"
+          SetBrandingImage /IMGID=1046 "$PLUGINSDIR\mheader.bmp"
         !endif
 
     !ifdef MUI_HEADERIMAGE_${UNINSTALLER}BITMAP_RTL

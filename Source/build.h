@@ -240,8 +240,10 @@ class CEXEBuild {
       TARGET_X86UNICODE,
       TARGET_AMD64, // Always Unicode
       TARGET_ARM64, // Always Unicode
-      TARGET_MIPS, // Windows NT for MIPS R4000 (little endian), always Unicode
-      TARGET_PPC, // Windows NT for PowerPC (little endian), always Unicode
+      TARGET_MIPS, // Windows NT for MIPS R4000 (little endian), Unicode
+      TARGET_PPC, // Windows NT for PowerPC (little endian), Unicode
+      TARGET_MIPSANSI, // Windows NT for MIPS R4000, ANSI
+      TARGET_PPCANSI, // Windows NT for PowerPC, ANSI
       TARGET_UNKNOWN,
       TARGETCOUNT = (TARGET_UNKNOWN-TARGETFIRST)
     } TARGETTYPE;
@@ -251,6 +253,9 @@ class CEXEBuild {
     const TCHAR* get_target_suffix(CEXEBuild::TARGETTYPE tt, const TCHAR*defval = _T("?")) const;
     const TCHAR* get_target_suffix() const { return get_target_suffix(m_target_type); }
     static bool is_targettype_64bit(TARGETTYPE tt) { return TARGET_AMD64 == tt || TARGET_ARM64 == tt; }
+    static bool is_targettype_ansi(TARGETTYPE tt) { return TARGET_X86ANSI == tt || TARGET_MIPSANSI == tt || TARGET_PPCANSI == tt; }
+    /* The target of the same processor with the other character set. */
+    static TARGETTYPE targettype_with_charset(TARGETTYPE tt, bool unicode);
     bool is_target_64bit() const { return is_targettype_64bit(m_target_type); }
     void print_bad_targettype_parameter(const TCHAR*cmdname, const TCHAR*prefix = _T("")) const;
     unsigned int get_header_size() const { return (unsigned int)sizeof(header) + (is_target_64bit() ? (4 * BLOCKS_NUM) : 0); }
@@ -439,6 +444,10 @@ class CEXEBuild {
     int add_plugins_dir_initializer(void);
     int initialize_default_plugins(bool newtargetarc = false);
     Plugins m_plugins[TARGETCOUNT], *m_pPlugins;
+    // The 8.3 name of each plug-in DLL in $PLUGINSDIR: the FAT file system
+    // of Windows NT 3.1 has no long names.
+    tstring short_plugin_file_name(const tstring& name);
+    std::map<tstring, tstring> m_plugin_short_names;
     bool plugin_used;
     bool uninst_plugin_used;
     int build_plugin_unload; // TOK_SETPLUGINUNLOAD

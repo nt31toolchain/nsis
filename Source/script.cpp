@@ -2387,7 +2387,7 @@ int CEXEBuild::doCommand(int which_token, LineParser &line)
     {
       int k = line.gettoken_enum(1, _T("false\0true\0"));
       if (-1 == k) PRINTHELP();
-      CEXEBuild::TARGETTYPE tt = k ? (TARGET_X86ANSI == m_target_type ? TARGET_X86UNICODE : m_target_type) : TARGET_X86ANSI;
+      CEXEBuild::TARGETTYPE tt = targettype_with_charset(m_target_type, k != 0);
       if (tt != m_target_type && (build_compressor_set | build_lockedunicodetarget))
       {
         ERROR_MSG(_T("Error: Can't change target %") NPRIs _T(" after data already got compressed or header already changed!\n"), _T("charset"));
@@ -5093,7 +5093,7 @@ int CEXEBuild::doCommand(int which_token, LineParser &line)
       if ((ret=add_entry(&ent)) != PS_OK) return ret;
 
       TCHAR tempDLL[NSIS_MAX_STRLEN];
-      wsprintf(tempDLL, _T("$PLUGINSDIR\\%") NPRIs, dllName.c_str()); // DLL name on the end-users machine
+      wsprintf(tempDLL, _T("$PLUGINSDIR\\%") NPRIs, short_plugin_file_name(dllName).c_str()); // DLL name on the end-users machine
 
       // Add the DLL to the installer
       if (data_handle == -1)

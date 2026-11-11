@@ -426,6 +426,20 @@ void CEXEBuild::initialize(const TCHAR *makensis_path)
   stubs_dir = nsis_dir;
   stubs_dir += PLATFORM_PATH_SEPARATOR_STR _T("Stubs");
 
+  // An NSIS directory can have the stubs of some targets only (one of
+  // a processor of Windows NT, for example): without the stub of the default
+  // target, the first target that has one is the default.
+  {
+    tstring stub = stubs_dir + PLATFORM_PATH_SEPARATOR_STR _T("zlib-");
+    FILE *fp = FOPEN((stub + get_target_suffix()).c_str(), ("rb"));
+    for (int tt = TARGETFIRST; !fp && tt < TARGETCOUNT; ++tt)
+    {
+      fp = FOPEN((stub + get_target_suffix((TARGETTYPE) tt)).c_str(), ("rb"));
+      if (fp) m_target_type = (TARGETTYPE) tt;
+    }
+    if (fp) fclose(fp);
+  }
+
   if (set_compressor(_T("zlib"), false) != PS_OK || set_target_architecture_data() != PS_OK)
   {
     throw runtime_error("error setting default stub");
@@ -3778,6 +3792,33 @@ int CEXEBuild::initialize_default_plugins(bool newtargetarc)
   return PS_OK;
 }
 
+static bool is_name_used(const std::map<tstring, tstring>& names, const tstring& name)
+{
+  for (std::map<tstring, tstring>::const_iterator it = names.begin(); it != names.end(); ++it)
+    if (!_tcsicmp(it->second.c_str(), name.c_str())) return true;
+  return false;
+}
+
+tstring CEXEBuild::short_plugin_file_name(const tstring& name)
+{
+  std::map<tstring, tstring>::const_iterator known = m_plugin_short_names.find(name);
+  if (known != m_plugin_short_names.end()) return known->second;
+
+  const tstring::size_type dot = name.find_last_of(_T('.'));
+  const tstring base = name.substr(0, dot), extension = dot == tstring::npos ? tstring() : name.substr(dot);
+  bool fits = base.length() <= 8 && extension.length() <= 4;
+  tstring result = name;
+  for (int number = 1; !fits || is_name_used(m_plugin_short_names, result); ++number)
+  {
+    TCHAR suffix[16];
+    wsprintf(suffix, _T("~%d"), number);
+    result = base.substr(0, 8 - _tcslen(suffix)) + suffix + extension.substr(0, 4);
+    fits = true;
+  }
+  m_plugin_short_names[name] = result;
+  return result;
+}
+
 int CEXEBuild::add_plugins_dir_initializer(void)
 {
   if (!plugin_used && !uninst_plugin_used) return PS_OK;
@@ -4045,7 +4086,9 @@ int CEXEBuild::set_target_architecture_data()
     { TARGET_AMD64,      _T("NSIS_AMD64"), _T("1")   },
     { TARGET_ARM64,      _T("NSIS_ARM64"), _T("1")   },
     { TARGET_MIPS,       _T("NSIS_MIPS"),  _T("1")   },
-    { TARGET_PPC,        _T("NSIS_PPC"),   _T("1")   }
+    { TARGET_PPC,        _T("NSIS_PPC"),   _T("1")   },
+    { TARGET_MIPSANSI,   _T("NSIS_MIPS"),  _T("1")   },
+    { TARGET_PPCANSI,    _T("NSIS_PPC"),   _T("1")   }
   };
   for (i = 0; i < COUNTOF(tdef); ++i) definedlist.del(tdef[i].def);
   unsigned int success = false;
@@ -4064,13 +4107,15 @@ const TCHAR* CEXEBuild::get_target_suffix(CEXEBuild::TARGETTYPE tt, const TCHAR*
   case TARGET_ARM64     : return _T("arm64-unicode");
   case TARGET_MIPS      : return _T("mips-unicode");
   case TARGET_PPC       : return _T("ppc-unicode");
+  case TARGET_MIPSANSI  : return _T("mips-ansi");
+  case TARGET_PPCANSI   : return _T("ppc-ansi");
   default: return defval;
   }
 }
 
 int CEXEBuild::change_target_architecture(TARGETTYPE tt)
 {
-  const bool wide = TARGET_X86ANSI != tt;
+  const bool wide = !is_targettype_ansi(tt);
   if (build_compressor_set || (build_unicode != wide && build_lockedunicodetarget))
   {
     ERROR_MSG(_T("Error: Can't change target %") NPRIs _T(" after data already got compressed or header already changed!\n"), _T("architecture"));
@@ -4096,6 +4141,17 @@ int CEXEBuild::set_compressor(const tstring& compressor, const bool solid) {
   if (solid)
     stub_filename += _T("_solid");
   return load_stub();
+}
+
+CEXEBuild::TARGETTYPE CEXEBuild::targettype_with_charset(TARGETTYPE tt, bool unicode)
+{
+  switch(tt)
+  {
+  case TARGET_MIPS: case TARGET_MIPSANSI: return unicode ? TARGET_MIPS : TARGET_MIPSANSI;
+  case TARGET_PPC: case TARGET_PPCANSI: return unicode ? TARGET_PPC : TARGET_PPCANSI;
+  case TARGET_X86ANSI: case TARGET_X86UNICODE: return unicode ? TARGET_X86UNICODE : TARGET_X86ANSI;
+  default: return unicode ? tt : TARGET_X86ANSI;
+  }
 }
 
 CEXEBuild::TARGETTYPE CEXEBuild::get_target_type(const TCHAR*s) const

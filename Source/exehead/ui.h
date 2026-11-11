@@ -24,6 +24,9 @@ extern int *cur_langtable;
 
 extern int NSISCALL ui_doinstall(void);
 void NSISCALL update_status_text(int strtab, const TCHAR *text2);
+#ifdef __NT31_SDK__
+void NSISCALL RegisterNT31Controls(void);
+#endif
 
 extern int ui_dlg_visible;
 extern HWND m_curwnd;

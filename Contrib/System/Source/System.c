@@ -207,6 +207,14 @@ PLUGINFUNCTION(Debug)
  * @param funcName The name of the function to get the address of.
  * @return The pointer to the function.  Null if failure.
  */
+#ifdef __NT31_SDK__
+// Also the functions of later systems that the Windows API layer of the
+// toolchain has.
+#define SYSTEM_GET_PROC_ADDRESS nt31_winapi_GetProcAddress
+#else
+#define SYSTEM_GET_PROC_ADDRESS GetProcAddress
+#endif
+
 void * NSISGetProcAddress(HMODULE dllHandle, TCHAR* funcName)
 {
 #ifdef _UNICODE
@@ -217,11 +225,11 @@ void * NSISGetProcAddress(HMODULE dllHandle, TCHAR* funcName)
   len = WideCharToMultiByte(CP_ACP, 0, funcName, -1, ansiName, 0, NULL, NULL);
   ansiName = (char*) GlobalAlloc(GPTR, len);
   WideCharToMultiByte(CP_ACP, 0, funcName, -1, ansiName, len, NULL, NULL);
-  funcPtr = GetProcAddress(dllHandle, ansiName);
+  funcPtr = SYSTEM_GET_PROC_ADDRESS(dllHandle, ansiName);
   GlobalFree(ansiName);
   return funcPtr;
 #else
-  return GetProcAddress(dllHandle, funcName);
+  return SYSTEM_GET_PROC_ADDRESS(dllHandle, funcName);
 #endif
 }
 

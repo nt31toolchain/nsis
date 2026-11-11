@@ -60,61 +60,6 @@ extra_parameters plugin_extra_parameters = {
 HRESULT g_hres;
 #endif
 
-#ifdef NSIS_SUPPORT_HWNDS
-#ifdef NSIS_CONFIG_ENHANCEDUI_SUPPORT
-// LoadImage of Windows NT 3.x cannot read a file (LR_LOADFROMFILE): the
-// bitmap file is read here, scaled to width x height if they are not 0. The
-// file goes 2 bytes into the buffer: the header of 14 bytes would put the
-// bitmap information at an address that a MIPS processor cannot read.
-static HBITMAP NSISCALL LoadBitmapFile(LPCTSTR name, int width, int height)
-{
-  HANDLE file = CreateFile(name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-  DWORD size, read;
-  BYTE *buffer, *data;
-  HBITMAP bitmap = NULL;
-
-  if (file == INVALID_HANDLE_VALUE)
-    return NULL;
-  size = GetFileSize(file, NULL);
-  buffer = (BYTE *) GlobalAlloc(GPTR, size + 2);
-  data = buffer + 2;
-  if (buffer && ReadFile(file, data, size, &read, NULL) && read == size
-      && size > sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)
-      && ((BITMAPFILEHEADER *) data)->bfType == 0x4D42
-      && ((BITMAPFILEHEADER *) data)->bfOffBits < size)
-  {
-    BITMAPINFO *info = (BITMAPINFO *) (data + sizeof(BITMAPFILEHEADER));
-    BYTE *bits = data + ((BITMAPFILEHEADER *) data)->bfOffBits;
-    HDC screen = GetDC(NULL);
-    int w = info->bmiHeader.biWidth;
-    int h = info->bmiHeader.biHeight < 0 ? -info->bmiHeader.biHeight : info->bmiHeader.biHeight;
-
-    if (!width) width = w;
-    if (!height) height = h;
-    if (width == w && height == h)
-      bitmap = CreateDIBitmap(screen, &info->bmiHeader, CBM_INIT, bits, info, DIB_RGB_COLORS);
-    else
-    {
-      HDC dc = CreateCompatibleDC(screen);
-      bitmap = CreateCompatibleBitmap(screen, width, height);
-      if (dc && bitmap)
-      {
-        HGDIOBJ previous = SelectObject(dc, bitmap);
-        SetStretchBltMode(dc, COLORONCOLOR);
-        StretchDIBits(dc, 0, 0, width, height, 0, 0, w, h, bits, info, DIB_RGB_COLORS, SRCCOPY);
-        SelectObject(dc, previous);
-      }
-      if (dc) DeleteDC(dc);
-    }
-    ReleaseDC(NULL, screen);
-  }
-  if (buffer) GlobalFree(buffer);
-  CloseHandle(file);
-  return bitmap;
-}
-#endif
-#endif
-
 static int NSISCALL ExecuteEntry(entry *entry_);
 
 /**
@@ -924,8 +869,6 @@ static int NSISCALL ExecuteEntry(entry *entry_)
       LPCTSTR imgid = (parm3 & LASIF_STRID) ? GetStringFromParm(0x11) : MAKEINTRESOURCE(parm1);
       GetClientRect(hCtl, &r);
       hNewImage=LoadImage(exeres ? g_hInstance : NULL, imgid, it, fitw*r.right, fith*r.bottom, parm3 & LASIM_LR);
-      if (!hNewImage && it == IMAGE_BITMAP && !exeres && (parm3 & LASIM_LR & LR_LOADFROMFILE))
-        hNewImage=LoadBitmapFile(imgid, fitw*r.right, fith*r.bottom);
       hPrevImage=(HANDLE)SendMessage(hCtl, STM_SETIMAGE, it, (LPARAM)hNewImage);
       if (hPrevImage && IMAGE_BITMAP == it) DeleteObject(hPrevImage); // Delete the old bitmap
       if (parm0 >= 0) iptrtostr(var0, (INT_PTR)hNewImage); // Optional output handle
@@ -1078,7 +1021,8 @@ static int NSISCALL ExecuteEntry(entry *entry_)
     case EW_REGISTERDLL:
       {
         exec_error++;
-        if (SUCCEEDED(g_hres))
+        // Only DllRegisterServer (parm2) needs OLE; Windows NT 3.1 has none.
+        if (SUCCEEDED(g_hres) || !parm2)
         {
           HANDLE h=NULL;
           TCHAR *buf1=GetStringFromParm(-0x10);

@@ -90,7 +90,7 @@ Finish page (implemented using nsDialogs)
     Function ${MUI_PAGE_UNINSTALLER_FUNCPREFIX}mui.FinishPage.GUIInit
   
       InitPluginsDir  
-      File "/oname=$PLUGINSDIR\modern-wizard.bmp" "${MUI_${MUI_PAGE_UNINSTALLER_PREFIX}WELCOMEFINISHPAGE_BITMAP}"
+      File "/oname=$PLUGINSDIR\mwizard.bmp" "${MUI_${MUI_PAGE_UNINSTALLER_PREFIX}WELCOMEFINISHPAGE_BITMAP}"
       !pragma verifyloadimage "${MUI_${MUI_PAGE_UNINSTALLER_PREFIX}WELCOMEFINISHPAGE_BITMAP}"
     
       !ifdef MUI_${MUI_PAGE_UNINSTALLER_PREFIX}PAGE_FUNCTION_GUIINIT
@@ -268,7 +268,7 @@ Finish page (implemented using nsDialogs)
     ;Image control
     ${NSD_CreateBitmap} 0u 0u 109u 193u ""
     Pop $mui.FinishPage.Image
-    !insertmacro MUI_INTERNAL_FULLWINDOW_LOADWIZARDIMAGE "${MUI_PAGE_UNINSTALLER_PREFIX}" $mui.FinishPage.Image $PLUGINSDIR\modern-wizard.bmp $mui.FinishPage.Image.Bitmap
+    !insertmacro MUI_INTERNAL_FULLWINDOW_LOADWIZARDIMAGE "${MUI_PAGE_UNINSTALLER_PREFIX}" $mui.FinishPage.Image $PLUGINSDIR\mwizard.bmp $mui.FinishPage.Image.Bitmap
     
     ;Positiong of controls
 
