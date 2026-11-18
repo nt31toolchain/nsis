@@ -244,6 +244,8 @@ class CEXEBuild {
       TARGET_PPC, // Windows NT for PowerPC (little endian), Unicode
       TARGET_MIPSANSI, // Windows NT for MIPS R4000, ANSI
       TARGET_PPCANSI, // Windows NT for PowerPC, ANSI
+      TARGET_ALPHA, // Windows NT for Alpha (32-bit), Unicode
+      TARGET_ALPHAANSI, // Windows NT for Alpha, ANSI
       TARGET_UNKNOWN,
       TARGETCOUNT = (TARGET_UNKNOWN-TARGETFIRST)
     } TARGETTYPE;
@@ -253,7 +255,7 @@ class CEXEBuild {
     const TCHAR* get_target_suffix(CEXEBuild::TARGETTYPE tt, const TCHAR*defval = _T("?")) const;
     const TCHAR* get_target_suffix() const { return get_target_suffix(m_target_type); }
     static bool is_targettype_64bit(TARGETTYPE tt) { return TARGET_AMD64 == tt || TARGET_ARM64 == tt; }
-    static bool is_targettype_ansi(TARGETTYPE tt) { return TARGET_X86ANSI == tt || TARGET_MIPSANSI == tt || TARGET_PPCANSI == tt; }
+    static bool is_targettype_ansi(TARGETTYPE tt) { return TARGET_X86ANSI == tt || TARGET_MIPSANSI == tt || TARGET_PPCANSI == tt || TARGET_ALPHAANSI == tt; }
     /* The target of the same processor with the other character set. */
     static TARGETTYPE targettype_with_charset(TARGETTYPE tt, bool unicode);
     bool is_target_64bit() const { return is_targettype_64bit(m_target_type); }

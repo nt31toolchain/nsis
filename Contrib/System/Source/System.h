@@ -9,8 +9,8 @@
 #  define SYSTEM_X86
 #elif defined(_M_ARM64)
 #  define SYSTEM_ARM64
-#elif defined(_M_MRX000) || defined(__mips__) || defined(_M_PPC)
-#  define SYSTEM_MIPS // Windows NT for MIPS R4000 or PowerPC, 32-bit: calls in C (System.c), no callbacks
+#elif defined(_M_MRX000) || defined(__mips__) || defined(_M_PPC) || defined(_M_ALPHA)
+#  define SYSTEM_MIPS // Windows NT for MIPS R4000, PowerPC or Alpha, 32-bit: calls in C (System.c), no callbacks
 #else
 #  error "Unknown architecture!"
 #endif

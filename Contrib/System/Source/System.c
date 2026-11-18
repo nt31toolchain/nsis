@@ -373,8 +373,44 @@ address of a function descriptor, as GetProcAddress gives it. The caller
 removes the arguments. A call with a fixed number of argument words is thus
 correct for every function with integer arguments: no assembly is necessary.
 Floating-point arguments are not possible (System has no type for them).
+Alpha passes each argument in a 64-bit slot, the first six in registers: a
+32-bit value sign-extended (the canonical form, also for unsigned values), a
+64-bit value in one slot.
 */
 #define SYSTEM_MIPS_MAXWORDS 32
+#if defined(_M_ALPHA)
+SystemProc* CALLBACK SetCallProcResultValues(SystemProc *proc, ULARGE_INTEGER retval);
+SystemProc* CallProc(SystemProc *proc)
+{
+    typedef ULONGLONG (*SLOTPROC)(ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG,
+                                  ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG,
+                                  ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG,
+                                  ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG, ULONGLONG);
+    ULONGLONG w[SYSTEM_MIPS_MAXWORDS];
+    ULARGE_INTEGER retval;
+    int i;
+
+    if (proc->ParamCount > SYSTEM_MIPS_MAXWORDS)
+    {
+        proc->ProcResult = PR_ERROR;
+        return proc;
+    }
+    for (i = 0; i < SYSTEM_MIPS_MAXWORDS; i++) w[i] = 0;
+    for (i = 1; i <= proc->ParamCount; i++)
+    {
+        if (proc->Params[i].Size == 2)
+            w[i - 1] = (ULONGLONG)(UINT)proc->Params[i].Value | ((ULONGLONG)(UINT)proc->Params[i]._value << 32);
+        else
+            w[i - 1] = (ULONGLONG)(LONGLONG)(INT)proc->Params[i].Value;
+    }
+    if ((proc->Options & POPT_ERROR) != 0) SetLastError(LastError);
+    retval.QuadPart = ((SLOTPROC) proc->Proc)(w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7],
+                                              w[8], w[9], w[10], w[11], w[12], w[13], w[14], w[15],
+                                              w[16], w[17], w[18], w[19], w[20], w[21], w[22], w[23],
+                                              w[24], w[25], w[26], w[27], w[28], w[29], w[30], w[31]);
+    return SetCallProcResultValues(proc, retval);
+}
+#else
 SystemProc* CALLBACK SetCallProcResultValues(SystemProc *proc, ULARGE_INTEGER retval);
 SystemProc* CallProc(SystemProc *proc)
 {
@@ -410,6 +446,7 @@ SystemProc* CallProc(SystemProc *proc)
                                               w[24], w[25], w[26], w[27], w[28], w[29], w[30], w[31]);
     return SetCallProcResultValues(proc, retval);
 }
+#endif //~ _M_ALPHA
 #endif //~ SYSTEM_MIPS
 #if defined(_WIN64) || defined(SYSTEM_MIPS)
 /*

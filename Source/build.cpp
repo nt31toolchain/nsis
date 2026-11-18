@@ -427,7 +427,7 @@ void CEXEBuild::initialize(const TCHAR *makensis_path)
   stubs_dir += PLATFORM_PATH_SEPARATOR_STR _T("Stubs");
 
   // An NSIS directory can have the stubs of some targets only (one of
-  // a processor of Windows NT, for example): without the stub of the default
+  // Windows NT for Alpha, for example): without the stub of the default
   // target, the first target that has one is the default.
   {
     tstring stub = stubs_dir + PLATFORM_PATH_SEPARATOR_STR _T("zlib-");
@@ -4088,7 +4088,9 @@ int CEXEBuild::set_target_architecture_data()
     { TARGET_MIPS,       _T("NSIS_MIPS"),  _T("1")   },
     { TARGET_PPC,        _T("NSIS_PPC"),   _T("1")   },
     { TARGET_MIPSANSI,   _T("NSIS_MIPS"),  _T("1")   },
-    { TARGET_PPCANSI,    _T("NSIS_PPC"),   _T("1")   }
+    { TARGET_PPCANSI,    _T("NSIS_PPC"),   _T("1")   },
+    { TARGET_ALPHA,      _T("NSIS_ALPHA"), _T("1")   },
+    { TARGET_ALPHAANSI,  _T("NSIS_ALPHA"), _T("1")   }
   };
   for (i = 0; i < COUNTOF(tdef); ++i) definedlist.del(tdef[i].def);
   unsigned int success = false;
@@ -4109,6 +4111,8 @@ const TCHAR* CEXEBuild::get_target_suffix(CEXEBuild::TARGETTYPE tt, const TCHAR*
   case TARGET_PPC       : return _T("ppc-unicode");
   case TARGET_MIPSANSI  : return _T("mips-ansi");
   case TARGET_PPCANSI   : return _T("ppc-ansi");
+  case TARGET_ALPHA     : return _T("alpha-unicode");
+  case TARGET_ALPHAANSI : return _T("alpha-ansi");
   default: return defval;
   }
 }
@@ -4149,6 +4153,7 @@ CEXEBuild::TARGETTYPE CEXEBuild::targettype_with_charset(TARGETTYPE tt, bool uni
   {
   case TARGET_MIPS: case TARGET_MIPSANSI: return unicode ? TARGET_MIPS : TARGET_MIPSANSI;
   case TARGET_PPC: case TARGET_PPCANSI: return unicode ? TARGET_PPC : TARGET_PPCANSI;
+  case TARGET_ALPHA: case TARGET_ALPHAANSI: return unicode ? TARGET_ALPHA : TARGET_ALPHAANSI;
   case TARGET_X86ANSI: case TARGET_X86UNICODE: return unicode ? TARGET_X86UNICODE : TARGET_X86ANSI;
   default: return unicode ? tt : TARGET_X86ANSI;
   }
